@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+"""Identify a supported outline using public hardware metadata, never input events."""
+import json
+from pathlib import Path
+import re
+import struct
+import subprocess
+
+
+def read(path):
+    try:
+        return Path(path).read_text().strip()
+    except (OSError, UnicodeError):
+        return ""
+
+
+def input_keyboards():
+    result = []
+    for path in Path("/sys/class/input").glob("input*"):
+        # Real typing keyboards advertise Q, A, Z, Space and Enter. This
+        # excludes media buttons, headphones, mice and laptop hotkey devices.
+        words = read(path / "capabilities/key").split()
+        try:
+            bits = int("".join(word.zfill(struct.calcsize("L") * 2) for word in words), 16)
+        except ValueError:
+            continue
+        if not all(bits & (1 << code) for code in (16, 30, 44, 57, 28)):
+            continue
+        if "/virtual/" in str(path.resolve()):
+            continue
+        name = read(path / "name")
+        result.append({"name": name, "hyprName": re.sub(r"\s", "-", name.lower()),
+                       "internal": read(path / "phys").startswith("isa")
+                       or "AT Translated" in name})
+    return result
+
+
+def parse_devices(raw):
+    # Some Hyprland versions emit bare `none` for virtual keyboard state.
+    # Replace only unquoted tokens; never rewrite device names or strings.
+    raw = re.sub(r'"(?:\\.|[^"\\])*"|\bnone\b',
+                 lambda match: "null" if match[0] == "none" else match[0], raw)
+    return json.loads(raw)
+
+
+def detect(vendor, product, keyboards, devices):
+    live = devices.get("keyboards", []) if isinstance(devices, dict) else []
+    candidates = []
+    for keyboard in keyboards:
+        match = next((item for item in live if item.get("name") == keyboard["hyprName"]), None)
+        if match:
+            candidates.append(dict(keyboard, live=match))
+    # Compositor virtual keyboards can be marked main; only physical typing
+    # devices may determine a hardware profile.
+    selected = next((item for item in candidates if item["live"].get("main")), None)
+    if selected is None:
+        selected = next((item for item in candidates if item["internal"]), None)
+    if selected is None and candidates:
+        selected = candidates[0]
+    info = selected["live"] if selected else {}
+    layouts = str(info.get("layout", "")).split(",")
+    variants = str(info.get("variant", "")).split(",")
+    index = info.get("active_layout_index", 0)
+    index = index if isinstance(index, int) and 0 <= index < len(layouts) else 0
+    layout = layouts[index]
+    variant = variants[index] if index < len(variants) else ""
+    supported = bool(selected and selected["internal"] and "ASUS" in vendor.upper()
+                     and re.search(r"\bUX3405CA(?:_|\b)", product, re.I)
+                     and layout == "us" and variant == "")
+    return {"profile": "asus-ux3405ca-us" if supported else "",
+            "computer": product, "vendor": vendor,
+            "keyboard": selected["name"] if selected else "Unknown keyboard",
+            "layout": layout, "keymap": info.get("active_keymap", "Unknown layout"),
+            "label": "ASUS Zenbook 14 · UX3405CA · US" if supported else product or "Keyboard",
+            "note": "US outline selected from laptop model and active keymap" if supported
+            else "No matching keyboard outline yet; using shortcut cards"}
+
+
+def main():
+    try:
+        response = subprocess.run(["hyprctl", "-j", "devices"], capture_output=True,
+                                  text=True, timeout=3, check=True)
+        devices = parse_devices(response.stdout)
+    except (OSError, subprocess.SubprocessError, ValueError):
+        devices = {}
+    print(json.dumps(detect(read("/sys/class/dmi/id/sys_vendor"),
+                            read("/sys/class/dmi/id/product_name"),
+                            input_keyboards(), devices)))
+
+
+if __name__ == "__main__":
+    main()

@@ -5,7 +5,7 @@ var CATEGORIES = [
   "media", "clipboard", "notifications", "style", "other"
 ]
 var MODIFIERS = ["SUPER", "SHIFT", "CTRL", "ALT"]
-var PROTOCOL_PREFIX = "omakeez:v1:"
+var PROTOCOL_PREFIX = "keybindz:v1:"
 
 function isObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value)
@@ -123,17 +123,17 @@ function parseProtocol(payload, catalog) {
   if (payload === PROTOCOL_PREFIX + "super:down") return { ok: true, type: "guide", phase: "down", root: "SUPER" }
   if (payload === PROTOCOL_PREFIX + "super:up") return { ok: true, type: "guide", phase: "up", root: "SUPER" }
 
-  var guideDown = payload.match(/^omakeez:v1:guide:down:(SUPER|SHIFT|CTRL|ALT)$/)
+  var guideDown = payload.match(/^keybindz:v1:guide:down:(SUPER|SHIFT|CTRL|ALT)$/)
   if (guideDown) return { ok: true, type: "guide", phase: "down", root: guideDown[1] }
   if (payload === PROTOCOL_PREFIX + "guide:up") return { ok: true, type: "guide", phase: "up" }
 
-  var modifierMatch = payload.match(/^omakeez:v1:mods:(.*)$/)
+  var modifierMatch = payload.match(/^keybindz:v1:mods:(.*)$/)
   if (modifierMatch) {
     if (!allowedModifierMask(modifierMatch[1])) return { ok: false, error: "invalid-modifiers" }
     return { ok: true, type: "mods", modifiers: modifierMatch[1] }
   }
 
-  var match = payload.match(/^omakeez:v1:match:(sha256:[0-9a-f]{64}):(press|release)$/)
+  var match = payload.match(/^keybindz:v1:match:(sha256:[0-9a-f]{64}):(press|release)$/)
   if (match) {
     var known = !!(catalog && catalog.byId && catalog.byId[match[1]])
     if (known && catalog.byId[match[1]].phase !== match[2]) return { ok: false, error: "phase-mismatch" }
@@ -145,7 +145,7 @@ function parseProtocol(payload, catalog) {
 function normalizeDelay(value) {
   if (value === false || String(value).toLowerCase() === "disabled") return -1
   var number = Number(value)
-  return [0, 80, 150, 250].indexOf(number) !== -1 ? number : 0
+  return [0, 80, 150, 250, 500].indexOf(number) !== -1 ? number : 0
 }
 
 function normalizeTopOffset(value) {
@@ -173,6 +173,17 @@ function settingsFor(barConfig, moduleName) {
       var entry = entries[i]
       if (isObject(entry) && String(entry.id || "") === targetId) return entry
     }
+  }
+  return {}
+}
+
+function settingsForConfig(config, moduleName) {
+  if (!isObject(config)) return {}
+  var layoutEntry = settingsFor(config.bar, moduleName)
+  if (layoutEntry.id) return layoutEntry
+  var plugins = Array.isArray(config.plugins) ? config.plugins : []
+  for (var i = 0; i < plugins.length; i++) {
+    if (isObject(plugins[i]) && plugins[i].id === moduleName) return plugins[i]
   }
   return {}
 }

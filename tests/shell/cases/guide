@@ -3,10 +3,9 @@ set -eu
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/../../.." && pwd)
 env -u DISPLAY QT_QPA_PLATFORM=minimal QT_QPA_PLATFORMTHEME= \
-  qmltestrunner -input "$root/tests/qml/tst_guide.qml" -o -,txt
+  /usr/lib/qt6/bin/qmltestrunner -input "$root/tests/qml/tst_guide.qml" -o -,txt
 grep -q 'GuideModel.canopyLayout' "$root/SuperGuide.qml"
-grep -q 'Util.alpha(Color.menu.background' "$root/SuperGuide.qml"
-grep -q 'gradient: Gradient' "$root/SuperGuide.qml"
+grep -q 'Util.alpha(Commons.Color.menu.background' "$root/SuperGuide.qml"
 grep -q 'fontSizeMode: Text.HorizontalFit' "$root/SuperGuide.qml"
 grep -q 'Hold SUPER · Add SHIFT / CTRL / ALT' "$root/SuperGuide.qml"
 grep -q 'split("_").join(" + ")' "$root/SuperGuide.qml"
@@ -16,7 +15,7 @@ if grep -q 'laneSummary' "$root/SuperGuide.qml"; then
 fi
 grep -q 'HoverHandler' "$root/SuperGuide.qml"
 grep -q 'overflowHoverTimer' "$root/SuperGuide.qml"
-grep -q 'item: overflowPill.visible && !root.expanded ? overflowPill : null' "$root/SuperGuide.qml"
+grep -q 'item: root.keyboardMode ? keyboardCanvas : overflowPill.visible && !root.expanded ? overflowPill : null' "$root/SuperGuide.qml"
 if grep -q 'mask: Region {}' "$root/SuperGuide.qml"; then
   echo "overflow hover requires a restricted pointer region" >&2
   exit 1

@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+root=$(CDPATH= cd -- "$(dirname -- "$0")/../../.." && pwd)
+python3 "$root/tests/keyboard-detection.py"
+env -u DISPLAY QT_QPA_PLATFORM=minimal QT_QPA_PLATFORMTHEME= \
+  /usr/lib/qt6/bin/qmltestrunner -input "$root/tests/qml/tst_keyboard.qml" -o -,txt

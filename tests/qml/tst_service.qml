@@ -3,7 +3,7 @@ import QtTest 1.3
 import "../../ServiceModel.js" as Model
 
 TestCase {
-  name: "OmakeezServiceModel"
+  name: "KeyBindzServiceModel"
 
   function id(letter) { return "sha256:" + Array(65).join(letter) }
 
@@ -62,30 +62,30 @@ TestCase {
 
   function test_everyValidProtocolForm() {
     var catalog = Model.normalizeCatalog(validCatalog()).catalog
-    compare(Model.parseProtocol("omakeez:v1:super:down", catalog).root, "SUPER")
-    compare(Model.parseProtocol("omakeez:v1:guide:down:ALT", catalog).root, "ALT")
-    compare(Model.parseProtocol("omakeez:v1:guide:up", catalog).phase, "up")
-    compare(Model.parseProtocol("omakeez:v1:mods:SUPER_SHIFT_CTRL_ALT", catalog).modifiers, "SUPER_SHIFT_CTRL_ALT")
-    compare(Model.parseProtocol("omakeez:v1:mods:SHIFT_ALT", catalog).modifiers, "SHIFT_ALT")
-    var press = Model.parseProtocol("omakeez:v1:match:" + id("b") + ":press", catalog)
+    compare(Model.parseProtocol("keybindz:v1:super:down", catalog).root, "SUPER")
+    compare(Model.parseProtocol("keybindz:v1:guide:down:ALT", catalog).root, "ALT")
+    compare(Model.parseProtocol("keybindz:v1:guide:up", catalog).phase, "up")
+    compare(Model.parseProtocol("keybindz:v1:mods:SUPER_SHIFT_CTRL_ALT", catalog).modifiers, "SUPER_SHIFT_CTRL_ALT")
+    compare(Model.parseProtocol("keybindz:v1:mods:SHIFT_ALT", catalog).modifiers, "SHIFT_ALT")
+    var press = Model.parseProtocol("keybindz:v1:match:" + id("b") + ":press", catalog)
     verify(press.ok)
     verify(press.known)
     compare(press.phase, "press")
-    var release = Model.parseProtocol("omakeez:v1:match:" + id("c") + ":release", catalog)
+    var release = Model.parseProtocol("keybindz:v1:match:" + id("c") + ":release", catalog)
     verify(release.ok)
     compare(release.phase, "release")
   }
 
   function test_protocolRejectsMalformedAndUnknownForms() {
     var catalog = Model.normalizeCatalog(validCatalog()).catalog
-    verify(!Model.parseProtocol("omakeez:v2:super:down", catalog).ok)
-    verify(!Model.parseProtocol("omakeez:v1:super:down:extra", catalog).ok)
-    verify(!Model.parseProtocol("omakeez:v1:guide:down:CAPS", catalog).ok)
-    verify(!Model.parseProtocol("omakeez:v1:guide:up:extra", catalog).ok)
-    verify(!Model.parseProtocol("omakeez:v1:mods:SUPER_CTRL_SHIFT", catalog).ok)
-    verify(!Model.parseProtocol("omakeez:v1:match:" + id("b") + ":press:extra", catalog).ok)
-    verify(!Model.parseProtocol("omakeez:v1:match:" + id("b") + ":release", catalog).ok)
-    var unknown = Model.parseProtocol("omakeez:v1:match:" + id("d") + ":press", catalog)
+    verify(!Model.parseProtocol("keybindz:v2:super:down", catalog).ok)
+    verify(!Model.parseProtocol("keybindz:v1:super:down:extra", catalog).ok)
+    verify(!Model.parseProtocol("keybindz:v1:guide:down:CAPS", catalog).ok)
+    verify(!Model.parseProtocol("keybindz:v1:guide:up:extra", catalog).ok)
+    verify(!Model.parseProtocol("keybindz:v1:mods:SUPER_CTRL_SHIFT", catalog).ok)
+    verify(!Model.parseProtocol("keybindz:v1:match:" + id("b") + ":press:extra", catalog).ok)
+    verify(!Model.parseProtocol("keybindz:v1:match:" + id("b") + ":release", catalog).ok)
+    var unknown = Model.parseProtocol("keybindz:v1:match:" + id("d") + ":press", catalog)
     verify(unknown.ok)
     verify(!unknown.known)
   }
@@ -94,6 +94,8 @@ TestCase {
     compare(Model.normalizeDelay(0), 0)
     compare(Model.normalizeDelay(80), 80)
     compare(Model.normalizeDelay("150"), 150)
+    compare(Model.normalizeDelay(500), 500)
+    compare(Model.normalizeDelay("500"), 500)
     compare(Model.normalizeDelay("disabled"), -1)
     compare(Model.normalizeDelay(99), 0)
     compare(Model.normalizeTopOffset(undefined), 0)
@@ -110,23 +112,35 @@ TestCase {
     compare(Model.normalizeGuideRoot(false), false)
 
     var barConfig = { layout: { left: [], center: [], right: [
-      { id: "io.github.cyprusad.omakeez", guideDelayMs: 150, guideTopOffset: 48, showInFullscreen: true,
+      { id: "io.github.s3pp3ku.keybindz", guideDelayMs: 150, guideTopOffset: 48, showInFullscreen: true,
         guideSuperEnabled: false, guideShiftEnabled: true, guideCtrlEnabled: false, guideAltEnabled: true,
         extensionOption: "preserve-me" }
     ] } }
-    var settings = Model.settingsFor(barConfig, "io.github.cyprusad.omakeez")
+    var settings = Model.settingsFor(barConfig, "io.github.s3pp3ku.keybindz")
     compare(settings.guideDelayMs, 150)
     compare(settings.guideTopOffset, 48)
     compare(settings.showInFullscreen, true)
     compare(settings.guideSuperEnabled, false)
     compare(settings.guideCtrlEnabled, false)
     compare(settings.extensionOption, "preserve-me")
-    compare(Model.settingsFor({}, "io.github.cyprusad.omakeez").guideDelayMs, undefined)
+    compare(Model.settingsFor({}, "io.github.s3pp3ku.keybindz").guideDelayMs, undefined)
+  }
+
+  function test_drawerSettingsAndLayoutPrecedence() {
+    var plugin = "io.github.s3pp3ku.keybindz"
+    var config = { bar: { layout: { right: [
+      { id: "drawer", hostedModules: [{ id: plugin }] }
+    ] } }, plugins: [{ id: plugin, guideShiftEnabled: false, guideView: "keyboard" }] }
+    compare(Model.settingsForConfig(config, plugin).guideShiftEnabled, false)
+    compare(Model.settingsForConfig(config, plugin).guideView, "keyboard")
+    config.bar.layout.right.push({ id: plugin, guideShiftEnabled: true })
+    compare(Model.settingsForConfig(config, plugin).guideShiftEnabled, true)
+    compare(Model.settingsForConfig({}, plugin).id, undefined)
   }
 
   function test_settingUpdatePreservesExistingEntry() {
     var original = {
-      id: "io.github.cyprusad.omakeez",
+      id: "io.github.s3pp3ku.keybindz",
       guideDelayMs: 150,
       guideTopOffset: 48,
       showInFullscreen: true,
@@ -134,7 +148,7 @@ TestCase {
       guideShiftEnabled: true,
       extensionOption: { keep: true }
     }
-    var updated = Model.updatedSettingsEntry(original, { guideTopOffset: 64 }, "io.github.cyprusad.omakeez")
+    var updated = Model.updatedSettingsEntry(original, { guideTopOffset: 64 }, "io.github.s3pp3ku.keybindz")
     compare(updated.id, original.id)
     compare(updated.guideDelayMs, 150)
     compare(updated.guideTopOffset, 64)
@@ -143,7 +157,7 @@ TestCase {
     compare(updated.guideShiftEnabled, true)
     compare(updated.extensionOption.keep, true)
     compare(original.guideTopOffset, 48)
-    var cannotReplaceId = Model.updatedSettingsEntry(original, { id: "wrong-plugin" }, "io.github.cyprusad.omakeez")
+    var cannotReplaceId = Model.updatedSettingsEntry(original, { id: "wrong-plugin" }, "io.github.s3pp3ku.keybindz")
     compare(cannotReplaceId.id, original.id)
   }
 

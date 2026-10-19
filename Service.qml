@@ -7,7 +7,7 @@ import "ServiceModel.js" as Model
 Item {
   id: root
 
-  readonly property string moduleName: "io.github.cyprusad.omakeez"
+  readonly property string moduleName: "io.github.s3pp3ku.keybindz"
   property var shell: null
   property var manifest: null
 
@@ -19,13 +19,16 @@ Item {
   property string activeModifiers: ""
   property string activeGuideRoot: ""
   property string highlightedBindingId: ""
-  property int guideDelayMs: 0
+  property int guideDelayMs: 500
   property int guideTopOffset: 0
+  property string guideView: "keyboard"
+  property var keyboardHardware: ({})
+  property var savedSettings: ({})
   property bool showInFullscreen: false
   property bool guideSuperEnabled: true
-  property bool guideShiftEnabled: true
+  property bool guideShiftEnabled: false
   property bool guideCtrlEnabled: true
-  property bool guideAltEnabled: true
+  property bool guideAltEnabled: false
   // Suppression starts active until both independent sources have answered.
   // Unknown state must never briefly expose the guide over a protected surface.
   property bool desktopLocked: true
@@ -68,7 +71,7 @@ Item {
 
   readonly property string home: Quickshell.env("HOME") || ""
   readonly property string stateHome: Quickshell.env("XDG_STATE_HOME") || (home + "/.local/state")
-  readonly property string stateDir: stateHome + "/omarchy/omakeez"
+  readonly property string stateDir: stateHome + "/omarchy/keybindz"
 
   function localPath(url) {
     var value = String(url || "")
@@ -85,7 +88,7 @@ Item {
   function protocolPayload(event) {
     if (!event || String(event.name || "") !== "custom") return ""
     var payload = String(event.data || "")
-    return payload.indexOf("omakeez:") === 0 ? payload : ""
+    return payload.indexOf("keybindz:") === 0 ? payload : ""
   }
 
   function setDiagnostic(name, delta) {
@@ -163,6 +166,9 @@ Item {
       guideVisible: guideVisible,
       catalogState: catalogState,
       integrationState: integrationState,
+      guideView: guideView,
+      keyboardProfile: keyboardHardware.profile || "",
+      keyboardMode: superGuide.keyboardMode,
       lastProtocolError: lastProtocolError,
       sessionDiagnostics: sessionDiagnostics
     })
@@ -190,18 +196,36 @@ Item {
   function closeGuide() { guideVisible = false }
 
   function settingsEntry() {
-    return Model.settingsFor(shell ? shell.barConfig : null, root.moduleName)
+    var entry = Model.settingsFor(shell ? shell.barConfig : null, root.moduleName)
+    return entry.id ? entry : savedSettings
+  }
+
+  // Drawer-hosted widgets store their options in plugins[], which the scoped
+  // shell API does not expose through barConfig. Follow the host's write order:
+  // a direct bar entry wins, otherwise use our own top-level plugin entry.
+  FileView {
+    id: userConfigFile
+    path: (Quickshell.env("XDG_CONFIG_HOME") || (root.home + "/.config")) + "/omarchy/shell.json"
+    watchChanges: true
+    printErrors: false
+    onFileChanged: reload()
+    onLoaded: {
+      try { root.savedSettings = Model.settingsForConfig(JSON.parse(text()), root.moduleName) }
+      catch (error) { return }
+      root.syncSettings()
+    }
   }
 
   function syncSettings() {
     var entry = settingsEntry()
-    guideDelayMs = Model.normalizeDelay(entry.guideDelayMs)
+    guideDelayMs = Model.normalizeDelay(entry.guideDelayMs === undefined ? 500 : entry.guideDelayMs)
     guideTopOffset = Model.normalizeTopOffset(entry.guideTopOffset)
+    guideView = entry.guideView === "cards" ? "cards" : "keyboard"
     showInFullscreen = Model.normalizeFullscreen(entry.showInFullscreen)
     guideSuperEnabled = Model.normalizeGuideRoot(entry.guideSuperEnabled)
-    guideShiftEnabled = Model.normalizeGuideRoot(entry.guideShiftEnabled)
+    guideShiftEnabled = Model.normalizeGuideRoot(entry.guideShiftEnabled === undefined ? false : entry.guideShiftEnabled)
     guideCtrlEnabled = Model.normalizeGuideRoot(entry.guideCtrlEnabled)
-    guideAltEnabled = Model.normalizeGuideRoot(entry.guideAltEnabled)
+    guideAltEnabled = Model.normalizeGuideRoot(entry.guideAltEnabled === undefined ? false : entry.guideAltEnabled)
     if (!guideRootEnabled(activeGuideRoot)) {
       clearGuide()
     }
@@ -225,6 +249,15 @@ Item {
     if (next === guideTopOffset) return false
     guideTopOffset = next
     return persistSettings({ guideTopOffset: next })
+  }
+
+  function setGuideView(value) {
+    guideView = value === "cards" ? "cards" : "keyboard"
+    return persistSettings({ guideView: guideView })
+  }
+
+  function refreshKeyboardHardware() {
+    if (!keyboardDetectProcess.running) keyboardDetectProcess.running = true
   }
 
   function setShowInFullscreen(value) {
@@ -812,13 +845,43 @@ Item {
   }
 
   IpcHandler {
-    target: "omakeez-feasibility"
+    target: "keybindz-feasibility"
     function diagnostics(): string { return root.diagnosticsJson() }
     function reset(): string { root.resetDiagnostics(); return "ok" }
+    function keyboard(): string { return JSON.stringify(root.keyboardHardware) }
+  }
+
+  Process {
+    id: keyboardDetectProcess
+    command: ["python3", root.localPath(Qt.resolvedUrl("scripts/detect-keyboard"))]
+    stdout: StdioCollector {
+      onStreamFinished: {
+        try { root.keyboardHardware = JSON.parse(text) }
+        catch (error) { root.keyboardHardware = ({}) }
+      }
+    }
+  }
+
+  // Hardware enumeration runs on startup, layout changes, device polling and
+  // a settings-panel refresh; it never listens to typed events.
+  Connections {
+    target: Hyprland
+    function onRawEvent(event) {
+      if (["activelayout", "activekeyboardlayout", "keyboardlayout", "configreloaded"].indexOf(String(event.name)) !== -1)
+        root.refreshKeyboardHardware()
+    }
+  }
+
+  Timer {
+    interval: 15000
+    repeat: true
+    running: true
+    onTriggered: root.refreshKeyboardHardware()
   }
 
   Component.onCompleted: Qt.callLater(function() {
     root.syncSettings()
+    root.refreshKeyboardHardware()
     root.inspectIntegration()
     manualSnippetProcess.command = [root.controllerPath, "manual-snippet"]
     manualSnippetProcess.running = true
@@ -833,6 +896,7 @@ Item {
   })
 
   SuperGuide {
+    id: superGuide
     service: root
   }
 }

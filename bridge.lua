@@ -1,4 +1,4 @@
--- Omakeez's deliberately small Hyprland input observer.
+-- KeyBindz's deliberately small Hyprland input observer.
 --
 -- SECURITY MODEL
 -- This file runs only because the user explicitly approves a three-line
@@ -6,7 +6,7 @@
 -- not open /dev/input, evdev, sockets, subprocesses, or network connections.
 -- Hyprland calls the callback below with a numeric key code and press/release
 -- state. The bridge keeps only an in-memory modifier mask and looks up that
--- numeric tuple in Omakeez's generated, local allowlist.
+-- numeric tuple in KeyBindz's generated, local allowlist.
 --
 -- The only events sent back to Quickshell are:
 --   * guide lifecycle names (for example, SUPER down/up),
@@ -16,7 +16,12 @@
 -- window titles, application names, passwords, or unmatched key codes. It
 -- does not write any data. A missing or malformed generated catalog disables
 -- the bridge rather than broadening what it observes or emits.
-local STATE_NAME = "__omakeez_bridge_state"
+-- Migrating in the same Hyprland Lua session can leave the old observer
+-- registered. Retire it before installing KeyBindz's independent observer.
+local legacy = rawget(_G, "__omakeez_bridge_state")
+if type(legacy) == "table" then legacy.enabled = false end
+
+local STATE_NAME = "__keybindz_bridge_state"
 local ORDERED_MODIFIERS = { "SUPER", "SHIFT", "CTRL", "ALT" }
 
 local state_home = os.getenv("XDG_STATE_HOME")
@@ -46,7 +51,7 @@ end
 -- by the generator. `pcall` lets a partially-written catalog fail closed while
 -- the service is regenerating it.
 local function load_catalog()
-  local loaded, catalog = pcall(dofile, state_home .. "/omarchy/omakeez/bridge-catalog.lua")
+  local loaded, catalog = pcall(dofile, state_home .. "/omarchy/keybindz/bridge-catalog.lua")
   if not loaded or type(catalog) ~= "table" or catalog.schemaVersion ~= 1
     or type(catalog.matches) ~= "table" then return nil, nil end
 
@@ -167,19 +172,19 @@ hl.on("input.keyboard.key", function(keycode, timestamp, event_state)
         bridge.held[name][code] = true
         if was_empty then
           bridge.guideRoot = name
-          emit("omakeez:v1:guide:down:" .. name)
+          emit("keybindz:v1:guide:down:" .. name)
         end
       else
         if not bridge.held[name][code] then return end
         bridge.held[name][code] = nil
         if name == bridge.guideRoot and was_held and not is_held(name) then
           bridge.guideRoot = nil
-          emit("omakeez:v1:guide:up")
+          emit("keybindz:v1:guide:up")
           return
         end
       end
       if bridge.guideRoot and not was_empty then
-        emit("omakeez:v1:mods:" .. modifier_mask())
+        emit("keybindz:v1:mods:" .. modifier_mask())
       end
       return
     end
@@ -191,7 +196,7 @@ hl.on("input.keyboard.key", function(keycode, timestamp, event_state)
   local phase = state == 1 and "press" or "release"
   local key = modifier_mask() .. "|" .. tostring(code) .. "|" .. phase .. "|" .. bridge.submap
   local id = bridge.catalog.matches[key]
-  if valid_id(id) then emit("omakeez:v1:match:" .. id .. ":" .. phase) end
+  if valid_id(id) then emit("keybindz:v1:match:" .. id .. ":" .. phase) end
 end)
 
 -- Submap changes are configuration context, not user activity history. Keep

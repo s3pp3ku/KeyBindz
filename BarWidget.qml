@@ -5,19 +5,19 @@ import qs.Ui
 BarWidget {
   id: root
 
-  moduleName: "io.github.cyprusad.omakeez"
+  moduleName: "io.github.s3pp3ku.keybindz"
 
   property var service: null
   readonly property bool opened: panelLoader.item ? panelLoader.item.opened === true : false
   readonly property string statusMark: !service || service.integrationState === "disabled"
     ? " ·" : service.integrationState === "error" ? " !" : service.integrationState === "disconnected" ? " ?" : ""
   readonly property string tooltipSummary: service && service.integrationState === "enabled"
-    ? "Omakeez keyboard shortcuts enabled"
+    ? "KeyBindz keyboard shortcuts enabled"
     : service && service.integrationState === "disconnected"
-      ? "Omakeez keyboard shortcuts disconnected"
+      ? "KeyBindz keyboard shortcuts disconnected"
       : service && service.integrationState === "error"
-        ? "Omakeez needs attention"
-        : "Set up Omakeez keyboard shortcuts"
+        ? "KeyBindz needs attention"
+        : "Set up KeyBindz keyboard shortcuts"
 
   function syncService() {
     service = bar && bar.shell && typeof bar.shell.serviceFor === "function"

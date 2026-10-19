@@ -1,108 +1,96 @@
-# Omakeez
+# KeyBindz
 
-Omakeez is a local-first visual guide for your registered Omarchy keyboard
-shortcuts. Hold an enabled starting key to see the relevant shortcuts on the
-focused monitor, without changing how the shortcuts themselves work.
+A theme-aware keyboard shortcut guide for Omarchy, maintained by **s3pp3ku**.
+Hold Super for half a second to see your registered shortcuts on a frosted
+keyboard overlay. Quick shortcuts finish without showing the guide.
 
-## See it in use
+KeyBindz is an independent MIT-licensed fork of
+[Omakeez by cyprusad](https://github.com/cyprusad/omakeez). It retains the upstream
+history and copyright; the keyboard view and local refinements are maintained
+here. Archived upstream design notes live in [docs/upstream](docs/upstream).
 
-![Omakeez Super Guide over an Omarchy desktop](assets/screenshots/super-guide.png)
+## Features
 
-*The guide arranges the highest-priority shortcuts near the center, preserves
-the visible canopy while overflow expands on hover, and remains readable over
-the active workspace.*
-
-| Enabled controls | Safe first-time setup |
-|---|---|
-| ![Enabled Omakeez panel](assets/screenshots/enabled-panel.png) | ![Omakeez setup review](assets/screenshots/onboarding-panel.png) |
-| Choose guide roots, delay, fullscreen behavior, or disable the guide. | Review the config target, safety checks, exact bridge source, and proposed change before enabling. |
-
-## Requirements
-
-Omakeez is tested with Omarchy 4.0.1, Quickshell 0.3.1, and Hyprland 0.56.2.
-It is designed for Omarchy's Lua-based Hyprland configuration.
+- Physical keyboard view for the ASUS Zenbook 14 UX3405CA US layout, with
+  automatic hardware/layout detection and a cards fallback for other keyboards.
+- Theme menu colors, control borders, gradients, corner rounding and opacity.
+- A frosted backdrop, faint unused-key outlines and readable shortcut labels.
+- A 500 ms default delay, with Instant, 80, 150, 250 and 500 ms options or Off.
+- Super and Ctrl guides enabled by default; Shift and Alt triggers disabled.
+  Add other modifiers while holding an enabled starting key to change the guide.
+- The guide follows the focused monitor and stays hidden over fullscreen apps
+  by default. It never changes your actual shortcuts.
+- No network client, keystroke history, statistics or `/dev/input` access.
 
 ## Install
 
-```sh
-omarchy plugin add https://github.com/cyprusad/omakeez.git --enable
-```
-
-Open the Omakeez bar widget and select **Enable visual keybinding guide**.
-Before anything changes, Omakeez shows the exact three-line bridge it proposes
-to add to the resolved Hyprland configuration. The button is the only action
-that writes configuration.
-
-The controller preserves safe symlinks and user-owned Git-dotfiles targets. If
-the target cannot be verified, Omakeez stays in setup mode and offers a manual
-snippet instead; it never asks for root access or modifies an unsafe target.
-
-## Using the guide
-
-Hold `SUPER`, `SHIFT`, `CTRL`, or `ALT` to open a guide for shortcuts beginning
-with that key. Add other modifier keys while holding it to narrow the visible
-bindings. The guide follows the focused monitor.
-
-The panel lets you:
-
-- choose each guide root independently;
-- choose how long a key must be held before the guide appears;
-- push the guide down from the top edge, for displays with a notch; and
-- keep guides hidden over fullscreen apps by default, or enable them there.
-
-### Displays with a notch
-
-The guide starts at the top edge of the focused monitor, which a notch or
-camera housing can cover. **Top offset** moves the guide down by a fixed number
-of pixels and leaves the band above it completely transparent, so the bar stays
-readable instead of sitting under the contrast gradient. The panel offers 24,
-32, 48 and 64 px, and the `guideTopOffset` bar-widget setting accepts any value
-from 0 to 320 for a housing that falls between them. The default is 0, which is
-the previous behavior.
-
-Turning off a guide root hides only that overlay. It never disables the
-underlying shortcut.
-
-## Privacy and local files
-
-Omakeez does not record or transmit what you type or do. It has no network
-client, does not use `/dev/input`, and keeps no shortcut-use history.
-
-It keeps only the local configuration metadata required to operate safely:
-
-```text
-${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/omakeez/
-├── catalog.json            # registered shortcut descriptions and opaque IDs
-├── bridge-catalog.lua      # allowlist used by the in-memory Hyprland bridge
-├── bridge-control.lock     # prevents concurrent configuration changes
-└── backups/                # rollback copies created only when config changes
-```
-
-The catalog excludes dispatcher arguments. See the detailed
-[security and privacy guide](docs/SECURITY.md), including an explanation of
-the [auditable bridge](bridge.lua).
-
-## Update or remove
+Requires Omarchy's Lua-based Hyprland configuration and Quickshell. The fork was
+validated on Omarchy 4.0.5 and Hyprland 0.56.2.
 
 ```sh
-omarchy plugin update io.github.cyprusad.omakeez --yes
+omarchy plugin add https://github.com/s3pp3ku/KeyBindz.git --enable
 ```
 
-To remove it cleanly, open the Omakeez panel, select **Disable visual guide**
-to remove only its managed Hyprland bridge block, then run:
+Open the KeyBindz bar widget and enable the visual guide. Its setup panel shows
+the small Hyprland bridge block before applying it.
+
+For the frosted effect, add this to `~/.config/hypr/looknfeel.lua` and reload
+Hyprland. Blur must be enabled in your compositor settings.
+
+```lua
+hl.layer_rule({
+  match = { namespace = "^keybindz-guide$" },
+  blur = true,
+  xray = false,
+  ignore_alpha = 0.01,
+})
+```
+
+Disable Omakeez before switching; KeyBindz uses its own plugin ID, bridge marker,
+event protocol and state directory. The initial migration on the author's
+machine preserves the existing widget placement and settings.
+
+## Configuration and updates
+
+Preferences live in KeyBindz's entry in `~/.config/omarchy/shell.json`, separate
+from the repository. Drawer-hosted widgets use the top-level `plugins` entry.
+Example:
+
+```json
+{
+  "id": "io.github.s3pp3ku.keybindz",
+  "guideView": "keyboard",
+  "guideDelayMs": 500,
+  "guideShiftEnabled": false,
+  "guideAltEnabled": false,
+  "showInFullscreen": false
+}
+```
+
+The frosted backdrop follows the theme's menu scrim; shortcut backgrounds follow
+the menu background with an 88% opacity minimum. Held-key borders keep the menu
+selection highlight even when the theme uses a gradient for menu frames.
 
 ```sh
-omarchy plugin disable io.github.cyprusad.omakeez
-omarchy plugin remove io.github.cyprusad.omakeez
+omarchy plugin update io.github.s3pp3ku.keybindz --yes
 ```
 
-## Limitations
+Updates now come from this fork. Upstream Omakeez changes are incorporated
+explicitly rather than replacing the custom keyboard implementation. Commit
+source changes before updating; the updater uses a fast-forward Git merge and
+refuses conflicting local changes.
 
-The guide identifies configured binding candidates from Hyprland's input event
-and binding table. It does not claim to prove that a later dispatcher command
-completed successfully. App-owned credential prompts such as 1Password are
-outside Omarchy's lock/Polkit suppression boundary, but typed content is never
-stored or emitted.
+Runtime metadata lives in `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/keybindz/`.
+It contains the generated shortcut catalog and bridge-control backups, with no
+activity history. Hardware detection reads DMI/sysfs metadata and the active
+Hyprland keyboard layout; it does not read input-device events.
 
-For recovery steps and every controller safety code, see
-[Troubleshooting](docs/TROUBLESHOOTING.md).
+## Development
+
+```sh
+PATH=/usr/lib/qt6/bin:$PATH sh tests/shell/run all
+```
+
+The tests cover catalog generation, bridge behavior, safe configuration changes,
+guide filtering, keyboard layout and hardware detection. Keep the MIT license
+and upstream attribution when redistributing.

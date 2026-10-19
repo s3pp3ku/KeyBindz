@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "GuideModel.js" as GuideModel
 
@@ -36,6 +37,8 @@ Item {
   readonly property string currentGuideRoot: service && String(service.activeGuideRoot || "") !== ""
     ? String(service.activeGuideRoot) : "SUPER"
   readonly property var lanes: GuideModel.laneCounts(service ? service.catalog : null)
+  readonly property bool keyboardMode: !!service && service.guideView !== "cards"
+    && service.keyboardHardware && service.keyboardHardware.profile === "asus-ux3405ca-us"
 
   function displayMask(mask) {
     return String(mask || currentGuideRoot).split("_").join(" + ")
@@ -174,45 +177,26 @@ Item {
           modelData ? modelData.name : "",
           root.focusedScreenName())
         color: "transparent"
-        // Keep a little extra window height for the gradient to dissolve
-        // into the desktop instead of ending in a visible horizontal edge.
-        implicitHeight: guideContent.y + guideContent.height + Style.space(80)
+        // Include the backdrop's overhang and rasterization room. Rounding a
+        // fractional content height down clips the bottom border at 1.6x scale.
+        implicitHeight: Math.ceil(guideContent.y + (root.keyboardMode
+          ? keyboardCanvas.y + keyboardCanvas.paintedBottom
+          : guideContent.height)) + 2
         exclusionMode: ExclusionMode.Ignore
         anchors { top: true; left: true; right: true }
 
-        WlrLayershell.namespace: "omakeez-guide"
+        WlrLayershell.namespace: "keybindz-guide"
         WlrLayershell.layer: WlrLayer.Overlay
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         // Hover is intentionally confined to this single pill. Every other
         // part of the guide remains pointer-transparent and the expanded
         // state is sticky, so cards themselves never need an input region.
         mask: Region {
-          item: overflowPill.visible && !root.expanded ? overflowPill : null
+          item: root.keyboardMode ? keyboardCanvas : overflowPill.visible && !root.expanded ? overflowPill : null
         }
 
-        // Theme-native contrast shield: intentionally opaque behind the
-        // primary cards, then progressively transparent below the guide.
-        // This makes text readable over a terminal or bright application
-        // without requiring compositor-specific blur configuration.
-        Rectangle {
-          id: guideBackdrop
-          x: 0
-          // Start the shield at the offset, not at the screen edge. The band a
-          // notch occupies also holds the bar, and dimming it to read a guide
-          // trades one unreadable thing for another. Above the offset the
-          // window stays fully transparent.
-          y: root.topOffset
-          width: parent.width
-          height: guideContent.y - root.topOffset + guideContent.height + Style.space(80)
-          z: -1
-          gradient: Gradient {
-            orientation: Gradient.Vertical
-            GradientStop { position: 0.0; color: Util.alpha(Color.menu.background, 0.96) }
-            GradientStop { position: 0.28; color: Util.alpha(Color.menu.background, 0.88) }
-            GradientStop { position: 0.66; color: Util.alpha(Color.menu.background, 0.48) }
-            GradientStop { position: 1.0; color: Util.alpha(Color.menu.background, 0.0) }
-          }
-        }
+        // The shortcut cards provide their own contrast. Keep the desktop
+        // visible between them instead of drawing a full-width backdrop.
 
         readonly property var guideLayout: GuideModel.canopyLayout(root.frozenCards, {
           width: Math.max(1, guideContent.width),
@@ -227,24 +211,19 @@ Item {
         Item {
           id: guideContent
           x: Style.space(4)
-          // The guide's transparent contrast surface already begins at the
-          // screen edge. Start the header there too, rather than reserving an
-          // opaque-looking dead band for the bar underneath. `guideTopOffset`
-          // opts back into that band for displays whose top edge is physically
-          // obstructed by a notch or camera housing. The window and shield
-          // heights are derived from this y, so both grow with the offset
-          // instead of clipping the last row.
-          y: Style.space(4) + root.topOffset
+          // Respect the configured top offset for notches and camera housings.
+          y: (root.keyboardMode ? Math.max(44, Style.space(4)) : Style.space(4)) + root.topOffset
           width: Math.max(1, parent.width - Style.space(8))
-          height: headerChip.height + Style.space(5) + deckCanvas.height
+          height: headerChip.height + Style.space(12)
+            + (root.keyboardMode ? keyboardCanvas.height : deckCanvas.height)
 
           BorderSurface {
             id: headerChip
             anchors.horizontalCenter: parent.horizontalCenter
             implicitWidth: headerRow.implicitWidth + Style.space(14)
             implicitHeight: Style.space(24)
-            color: Util.alpha(Color.menu.background, 0.82)
-            borderSpec: Border.surfaceSpec("menu", "border", Color.menu.border,
+            color: root.keyboardMode ? keyboardCanvas.keySurfaceColor : Util.alpha(Commons.Color.menu.background, 0.82)
+            borderSpec: Border.surfaceSpec("menu", "border", Commons.Color.menu.border,
               Math.max(1, Style.space(1)))
             radius: Style.cornerRadius
 
@@ -253,8 +232,8 @@ Item {
               anchors.centerIn: parent
               spacing: Style.space(5)
               Text {
-                text: root.frozenGuideRoot + " GUIDE"
-                color: Color.menu.selectedText
+                text: root.keyboardMode ? root.displayMask(root.frozenMask) : root.frozenGuideRoot + " GUIDE"
+                color: Commons.Color.menu.selectedText
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption
                 font.bold: true
@@ -263,10 +242,11 @@ Item {
                 elide: Text.ElideNone
               }
               Text {
-                text: root.expanded ? "All " + guideWindow.guideLayout.total + " bindings"
+                text: root.keyboardMode ? root.service.keyboardHardware.label
+                  : root.expanded ? "All " + guideWindow.guideLayout.total + " bindings"
                   : root.frozenMask === root.frozenGuideRoot ? root.guideHint(root.frozenGuideRoot)
                     : root.displayMask(root.frozenMask)
-                color: Color.menu.text
+                color: Commons.Color.menu.text
                 opacity: 0.84
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption
@@ -274,8 +254,23 @@ Item {
             }
           }
 
+          KeyboardGuide {
+            id: keyboardCanvas
+            visible: root.keyboardMode
+            anchors.horizontalCenter: parent.horizontalCenter
+            y: headerChip.height + Style.space(12)
+            width: Math.min(parent.width - 80, 1440,
+              Math.max(320, (guideWindow.screen.height - root.topOffset - 180) * 2.8))
+            height: implicitHeight
+            catalog: root.service ? root.service.catalog : null
+            modifierMask: root.frozenMask
+            hardware: root.service ? root.service.keyboardHardware : ({})
+            highlightedBindingId: root.renderedHighlightId
+          }
+
           Item {
             id: deckCanvas
+            visible: !root.keyboardMode
             x: 0
             y: headerChip.height + Style.space(5)
             width: parent.width
@@ -293,13 +288,13 @@ Item {
                 width: modelData.width
                 height: modelData.height
                 radius: Style.cornerRadius
-                color: highlighted ? Color.menu.selectedBackground
-                  : Util.alpha(Color.menu.background, modelData.opacity)
+                color: highlighted ? Commons.Color.menu.selectedBackground
+                  : Util.alpha(Commons.Color.menu.background, modelData.opacity)
                 borderSpec: highlighted
-                  ? Border.surfaceSpec("menu", "selected-border", Color.menu.selectedBorder,
+                  ? Border.surfaceSpec("menu", "selected-border", Commons.Color.menu.selectedBorder,
                     Math.max(1, Style.space(1)))
                   : Border.surfaceSpec("menu", "border",
-                    Util.alpha(Color.menu.border, Math.min(1, modelData.opacity + 0.12)),
+                    Util.alpha(Commons.Color.menu.border, Math.min(1, modelData.opacity + 0.12)),
                     Math.max(1, Style.space(1)))
 
                 Behavior on x {
@@ -319,7 +314,7 @@ Item {
                     width: parent.width
                     height: Math.max(1, (parent.height - parent.spacing) * 0.52)
                     text: modelData.binding.combo
-                    color: highlighted ? Color.menu.selectedText : Color.menu.text
+                    color: highlighted ? Commons.Color.menu.selectedText : Commons.Color.menu.text
                     font.family: Style.font.family
                     font.pixelSize: Math.max(10, Style.font.caption + 1)
                     font.bold: true
@@ -335,7 +330,7 @@ Item {
                     width: parent.width
                     height: Math.max(1, parent.height - parent.spacing - (parent.height - parent.spacing) * 0.52)
                     text: modelData.binding.description
-                    color: highlighted ? Color.menu.selectedText : Color.menu.text
+                    color: highlighted ? Commons.Color.menu.selectedText : Commons.Color.menu.text
                     opacity: highlighted ? 1 : 0.88
                     font.family: Style.font.family
                     font.pixelSize: Math.max(8, Style.font.caption - 1)
@@ -358,15 +353,15 @@ Item {
               width: visible ? guideWindow.guideLayout.overflow.width : 0
               height: visible ? guideWindow.guideLayout.overflow.height : 0
               radius: Style.cornerRadius
-              color: Util.alpha(Color.menu.background, 0.9)
-              borderSpec: Border.surfaceSpec("menu", "border", Color.menu.selectedBorder,
+              color: Util.alpha(Commons.Color.menu.background, 0.9)
+              borderSpec: Border.surfaceSpec("menu", "border", Commons.Color.menu.selectedBorder,
                 Math.max(1, Style.space(1)))
               Behavior on color { ColorAnimation { duration: 120 } }
 
               Text {
                 anchors.centerIn: parent
                 text: "+" + guideWindow.guideLayout.more + " MORE · HOVER"
-                color: Color.menu.selectedText
+                color: Commons.Color.menu.selectedText
                 font.family: Style.font.family
                 font.pixelSize: Style.font.caption
                 font.bold: true

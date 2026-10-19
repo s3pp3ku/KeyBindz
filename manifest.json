@@ -1,31 +1,40 @@
 {
   "schemaVersion": 1,
-  "id": "io.github.cyprusad.omakeez",
-  "name": "Omakeez",
-  "version": "0.1.2",
-  "author": "cyprusad",
+  "id": "io.github.s3pp3ku.keybindz",
+  "name": "KeyBindz",
+  "version": "0.1.0",
+  "author": "s3pp3ku",
   "license": "MIT",
-  "description": "A local-first visual guide for Omarchy keyboard shortcuts.",
-  "kinds": ["bar-widget", "service"],
+  "description": "A theme-aware keyboard shortcut guide with a frosted physical keyboard overlay.",
+  "kinds": [
+    "bar-widget",
+    "service"
+  ],
   "entryPoints": {
     "barWidget": "BarWidget.qml",
     "service": "Service.qml"
   },
   "barWidget": {
-    "displayName": "Omakeez",
+    "displayName": "KeyBindz",
     "category": "Learning",
     "allowMultiple": false,
     "defaultSection": "right",
     "defaults": {
-      "guideDelayMs": 0,
+      "guideDelayMs": 500,
       "guideTopOffset": 0,
+      "guideView": "keyboard",
       "showInFullscreen": false,
       "guideSuperEnabled": true,
-      "guideShiftEnabled": true,
+      "guideShiftEnabled": false,
       "guideCtrlEnabled": true,
-      "guideAltEnabled": true
+      "guideAltEnabled": false
     },
     "schema": [
+      {
+        "key": "guideView",
+        "type": "string",
+        "label": "Guide view (keyboard or cards)"
+      },
       {
         "key": "guideDelayMs",
         "type": "integer",

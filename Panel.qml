@@ -1,13 +1,14 @@
 import QtQuick
 import Quickshell
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 Panel {
   id: root
 
-  moduleName: "io.github.cyprusad.omakeez"
-  ipcTarget: "io.github.cyprusad.omakeez"
+  moduleName: "io.github.s3pp3ku.keybindz"
+  ipcTarget: "io.github.s3pp3ku.keybindz"
   manageIpc: false
 
   property var anchorItem: null
@@ -22,7 +23,7 @@ Panel {
     ? preview.currentHash : ""
   readonly property string displayedDiff: preview && typeof preview.proposedDiff === "string"
     ? preview.proposedDiff : ""
-  readonly property string bridgeSourceUrl: "https://github.com/cyprusad/omakeez/blob/main/bridge.lua"
+  readonly property string bridgeSourceUrl: "https://github.com/s3pp3ku/KeyBindz/blob/main/bridge.lua"
   readonly property bool enableReady: !!root.service && root.preview
     && root.preview.safeToPatch === true && root.displayedHash !== ""
     && !root.service.integrationMutationRunning
@@ -34,20 +35,20 @@ Panel {
   }
 
   function diffAddedColor() {
-    var luminance = Color.menu.background.r * 0.2126
-      + Color.menu.background.g * 0.7152 + Color.menu.background.b * 0.0722
+    var luminance = Commons.Color.menu.background.r * 0.2126
+      + Commons.Color.menu.background.g * 0.7152 + Commons.Color.menu.background.b * 0.0722
     return luminance < 0.5 ? "#8bd49c" : "#236b3e"
   }
 
   function diffRemovedColor() {
-    var luminance = Color.menu.background.r * 0.2126
-      + Color.menu.background.g * 0.7152 + Color.menu.background.b * 0.0722
+    var luminance = Commons.Color.menu.background.r * 0.2126
+      + Commons.Color.menu.background.g * 0.7152 + Commons.Color.menu.background.b * 0.0722
     return luminance < 0.5 ? "#f08a8a" : "#a52d3c"
   }
 
   function safetyColor() {
-    var luminance = Color.menu.background.r * 0.2126
-      + Color.menu.background.g * 0.7152 + Color.menu.background.b * 0.0722
+    var luminance = Commons.Color.menu.background.r * 0.2126
+      + Commons.Color.menu.background.g * 0.7152 + Commons.Color.menu.background.b * 0.0722
     if (root.preview && root.preview.safeToPatch === true)
       return luminance < 0.5 ? "#8bd49c" : "#236b3e"
     return luminance < 0.5 ? "#f0c674" : "#8a5a00"
@@ -84,9 +85,9 @@ Panel {
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i]
       var color = line.indexOf("+++") === 0 || line.indexOf("---") === 0
-        ? String(Color.menu.text)
+        ? String(Commons.Color.menu.text)
         : line.indexOf("+") === 0 ? diffAddedColor()
-        : line.indexOf("-") === 0 ? diffRemovedColor() : String(Color.menu.text)
+        : line.indexOf("-") === 0 ? diffRemovedColor() : String(Commons.Color.menu.text)
       output.push("<font color=\"" + color + "\">" + htmlEscape(line) + "</font>")
     }
     return output.join("<br/>")
@@ -142,7 +143,7 @@ Panel {
     Qt.openUrlExternally(root.bridgeSourceUrl)
   }
 
-  function delayValue(index) { return [0, 80, 150, 250, -1][index] }
+  function delayValue(index) { return [0, 80, 150, 250, 500, -1][index] }
   function topOffsetValue(index) { return [0, 24, 32, 48, 64][index] }
 
   onBarChanged: syncService()
@@ -206,8 +207,8 @@ Panel {
 
           Text {
             width: parent.width
-            text: root.onboarding ? "SET UP OMAKEEZ" : "OMAKEEZ"
-            color: Color.foreground
+            text: root.onboarding ? "SET UP KEYBINDZ" : "KEYBINDZ"
+            color: Commons.Color.foreground
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.title
             font.bold: true
@@ -219,7 +220,7 @@ Panel {
               || root.service.integrationState === "error"
               || root.service.integrationState === "disconnected"
             text: root.statusText()
-            color: root.service && root.service.integrationState === "error" ? Color.urgent : Color.foreground
+            color: root.service && root.service.integrationState === "error" ? Commons.Color.urgent : Commons.Color.foreground
             opacity: 0.78
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.caption
@@ -237,7 +238,7 @@ Panel {
           Text {
             width: parent.width
             text: "CONFIGURATION REVIEW"
-            color: Color.foreground
+            color: Commons.Color.foreground
             opacity: 0.82
             font.pixelSize: Style.font.caption
             font.bold: true
@@ -245,8 +246,8 @@ Panel {
 
           Text {
             width: parent.width
-            text: "Omakeez checks the Hyprland file before it changes anything."
-            color: Color.foreground
+            text: "KeyBindz checks the Hyprland file before it changes anything."
+            color: Commons.Color.foreground
             opacity: 0.78
             font.pixelSize: Style.font.caption
             wrapMode: Text.WordWrap
@@ -255,8 +256,8 @@ Panel {
           BorderSurface {
             width: parent.width
             implicitHeight: detailsColumn.implicitHeight + Style.space(16)
-            color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.04)
-            borderSpec: Border.flat(Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.12), 1)
+            color: Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.04)
+            borderSpec: Border.flat(Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.12), 1)
             radius: Style.cornerRadius
 
             Column {
@@ -267,14 +268,14 @@ Panel {
               anchors.margins: Style.space(8)
               spacing: Style.space(7)
 
-              Text { width: parent.width; text: "Safety"; color: Color.foreground; opacity: 0.68; font.pixelSize: Style.font.caption; font.bold: true }
+              Text { width: parent.width; text: "Safety"; color: Commons.Color.foreground; opacity: 0.68; font.pixelSize: Style.font.caption; font.bold: true }
               Text { width: parent.width; text: root.safetySummary(); color: root.safetyColor(); font.pixelSize: Style.font.body; font.bold: true; wrapMode: Text.WordWrap }
               Text {
                 width: parent.width
                 text: root.enableReady
-                  ? "Omakeez can add its small local bridge without changing your existing bindings."
-                  : "Automatic setup needs review before Omakeez can change this file."
-                color: Color.foreground
+                  ? "KeyBindz can add its small local bridge without changing your existing bindings."
+                  : "Automatic setup needs review before KeyBindz can change this file."
+                color: Commons.Color.foreground
                 opacity: 0.76
                 font.pixelSize: Style.font.caption
                 wrapMode: Text.WordWrap
@@ -287,15 +288,15 @@ Panel {
                 Column {
                   width: (parent.width - parent.spacing) / 2
                   spacing: Style.space(2)
-                  Text { width: parent.width; text: "Symlink check"; color: Color.foreground; opacity: 0.62; font.pixelSize: Style.font.caption; font.bold: true }
-                  Text { width: parent.width; text: root.symlinkCheckSummary(); color: root.symlinkPathsMatch() ? Color.foreground : root.safetyColor(); opacity: 0.86; font.pixelSize: Style.font.caption; elide: Text.ElideRight }
+                  Text { width: parent.width; text: "Symlink check"; color: Commons.Color.foreground; opacity: 0.62; font.pixelSize: Style.font.caption; font.bold: true }
+                  Text { width: parent.width; text: root.symlinkCheckSummary(); color: root.symlinkPathsMatch() ? Commons.Color.foreground : root.safetyColor(); opacity: 0.86; font.pixelSize: Style.font.caption; elide: Text.ElideRight }
                 }
 
                 Column {
                   width: (parent.width - parent.spacing) / 2
                   spacing: Style.space(2)
-                  Text { width: parent.width; text: "Git check"; color: Color.foreground; opacity: 0.62; font.pixelSize: Style.font.caption; font.bold: true }
-                  Text { width: parent.width; text: root.gitCheckSummary(); color: Color.foreground; opacity: 0.86; font.pixelSize: Style.font.caption; elide: Text.ElideMiddle }
+                  Text { width: parent.width; text: "Git check"; color: Commons.Color.foreground; opacity: 0.62; font.pixelSize: Style.font.caption; font.bold: true }
+                  Text { width: parent.width; text: root.gitCheckSummary(); color: Commons.Color.foreground; opacity: 0.86; font.pixelSize: Style.font.caption; elide: Text.ElideMiddle }
                 }
               }
 
@@ -303,8 +304,8 @@ Panel {
                 visible: !root.symlinkPathsMatch()
                 width: parent.width
                 spacing: Style.space(2)
-                Text { width: parent.width; text: "Logical path: " + root.pathValue("logicalPath"); color: Color.foreground; opacity: 0.78; elide: Text.ElideMiddle; font.pixelSize: Style.font.caption }
-                Text { width: parent.width; text: "Resolved path: " + root.pathValue("resolvedPath"); color: Color.foreground; opacity: 0.78; elide: Text.ElideMiddle; font.pixelSize: Style.font.caption }
+                Text { width: parent.width; text: "Logical path: " + root.pathValue("logicalPath"); color: Commons.Color.foreground; opacity: 0.78; elide: Text.ElideMiddle; font.pixelSize: Style.font.caption }
+                Text { width: parent.width; text: "Resolved path: " + root.pathValue("resolvedPath"); color: Commons.Color.foreground; opacity: 0.78; elide: Text.ElideMiddle; font.pixelSize: Style.font.caption }
               }
             }
           }
@@ -327,8 +328,8 @@ Panel {
           Text {
             width: parent.width
             visible: root.displayedDiff !== ""
-            text: "WHAT OMAKEEZ CHANGES"
-            color: Color.foreground
+            text: "WHAT KEYBINDZ CHANGES"
+            color: Commons.Color.foreground
             opacity: 0.82
             font.pixelSize: Style.font.caption
             font.bold: true
@@ -338,7 +339,7 @@ Panel {
             width: parent.width
             visible: root.displayedDiff !== ""
             text: "One small, local bridge is added to Hyprland so the visual guide can see registered keyboard shortcuts."
-            color: Color.foreground
+            color: Commons.Color.foreground
             opacity: 0.78
             font.pixelSize: Style.font.caption
             wrapMode: Text.WordWrap
@@ -351,7 +352,7 @@ Panel {
 
             Text {
               text: root.showDiff ? "Hide exact change" : "Review exact change"
-              color: Color.accent
+              color: Commons.Color.accent
               opacity: 0.86
               font.pixelSize: Style.font.caption
               font.underline: diffToggleMouse.containsMouse
@@ -366,7 +367,7 @@ Panel {
 
             Text {
               text: "View bridge source"
-              color: Color.accent
+              color: Commons.Color.accent
               opacity: 0.86
               font.pixelSize: Style.font.caption
               font.underline: bridgeSourceMouse.containsMouse
@@ -385,7 +386,7 @@ Panel {
             height: Style.space(170)
             visible: root.displayedDiff !== "" && root.showDiff
             color: Qt.rgba(0, 0, 0, 0.18)
-            borderSpec: Border.flat(Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, 0.12), 1)
+            borderSpec: Border.flat(Qt.rgba(Commons.Color.foreground.r, Commons.Color.foreground.g, Commons.Color.foreground.b, 0.12), 1)
             radius: Style.cornerRadius
 
             Flickable {
@@ -402,7 +403,7 @@ Panel {
                 textFormat: TextEdit.RichText
                 readOnly: true
                 selectByMouse: true
-                color: Color.foreground
+                color: Commons.Color.foreground
                 font.family: "monospace"
                 font.pixelSize: Style.font.caption
                 wrapMode: TextEdit.NoWrap
@@ -423,7 +424,7 @@ Panel {
             width: parent.width
             visible: !!root.service && root.service.integrationState === "error"
             text: "Reason: " + root.pathValue("reasonCode") + "\nReview the configuration, then recheck before trying again."
-            color: Color.urgent
+            color: Commons.Color.urgent
             font.pixelSize: Style.font.caption
             wrapMode: Text.WordWrap
           }
@@ -454,8 +455,45 @@ Panel {
 
           Text {
             width: parent.width
-            text: "Omakeez shows a visual guide for registered keyboard shortcuts while you hold their starting keys."
-            color: Color.foreground
+            text: "KeyBindz shows a visual guide for registered keyboard shortcuts while you hold their starting keys."
+            color: Commons.Color.foreground
+            opacity: 0.78
+            font.pixelSize: Style.font.caption
+            wrapMode: Text.WordWrap
+          }
+
+          Text {
+            width: parent.width
+            text: "GUIDE VIEW"
+            color: Commons.Color.foreground
+            opacity: 0.70
+            font.pixelSize: Style.font.caption
+            font.bold: true
+          }
+          Row {
+            spacing: Style.space(4)
+            Button {
+              text: "Keyboard"
+              selected: root.service && root.service.guideView === "keyboard"
+              onClicked: root.service.setGuideView("keyboard")
+            }
+            Button {
+              text: "Cards"
+              selected: root.service && root.service.guideView === "cards"
+              onClicked: root.service.setGuideView("cards")
+            }
+            Button {
+              text: "Detect"
+              onClicked: root.service.refreshKeyboardHardware()
+            }
+          }
+          Text {
+            width: parent.width
+            text: root.service && root.service.keyboardHardware.label
+              ? root.service.keyboardHardware.label + "\n" + root.service.keyboardHardware.note
+              : "Detecting keyboard…"
+            textFormat: Text.PlainText
+            color: Commons.Color.foreground
             opacity: 0.78
             font.pixelSize: Style.font.caption
             wrapMode: Text.WordWrap
@@ -464,15 +502,15 @@ Panel {
           Text {
             width: parent.width
             text: "DELAY"
-            color: Color.foreground
+            color: Commons.Color.foreground
             opacity: 0.70
             font.pixelSize: Style.font.caption
             font.bold: true
           }
           Text {
             width: parent.width
-            text: "How long to hold a key before its guide appears. Off keeps Omakeez enabled without showing a guide."
-            color: Color.foreground
+            text: "How long to hold a key before its guide appears. Off keeps KeyBindz enabled without showing a guide."
+            color: Commons.Color.foreground
             opacity: 0.78
             font.pixelSize: Style.font.caption
             wrapMode: Text.WordWrap
@@ -481,10 +519,10 @@ Panel {
             width: parent.width
             spacing: Style.space(4)
             Repeater {
-              model: ["Instant", "80 ms", "150 ms", "250 ms", "Off"]
+              model: ["Instant", "80 ms", "150 ms", "250 ms", "500 ms", "Off"]
               Button {
                 required property int index
-                text: ["Instant", "80 ms", "150 ms", "250 ms", "Off"][index]
+                text: ["Instant", "80 ms", "150 ms", "250 ms", "500 ms", "Off"][index]
                 selected: root.service && root.service.guideDelayMs === root.delayValue(index)
                 onClicked: root.service.setGuideDelayMs(root.delayValue(index))
               }
@@ -496,7 +534,7 @@ Panel {
           Text {
             width: parent.width
             text: "TOP OFFSET"
-            color: Color.foreground
+            color: Commons.Color.foreground
             opacity: 0.70
             font.pixelSize: Style.font.caption
             font.bold: true
@@ -504,7 +542,7 @@ Panel {
           Text {
             width: parent.width
             text: "Push the guide down from the top edge, for displays with a notch or camera housing that would cover it."
-            color: Color.foreground
+            color: Commons.Color.foreground
             opacity: 0.78
             font.pixelSize: Style.font.caption
             wrapMode: Text.WordWrap
@@ -534,7 +572,7 @@ Panel {
               Text {
                 width: parent.width
                 text: "FULLSCREEN"
-                color: Color.foreground
+                color: Commons.Color.foreground
                 opacity: 0.70
                 font.pixelSize: Style.font.caption
                 font.bold: true
@@ -542,7 +580,7 @@ Panel {
               Text {
                 width: parent.width
                 text: "Keep the guide visible while you use fullscreen apps."
-                color: Color.foreground
+                color: Commons.Color.foreground
                 opacity: 0.78
                 font.pixelSize: Style.font.caption
                 wrapMode: Text.WordWrap
@@ -561,7 +599,7 @@ Panel {
           Text {
             width: parent.width
             text: "SHOW GUIDES FOR"
-            color: Color.foreground
+            color: Commons.Color.foreground
             opacity: 0.70
             font.pixelSize: Style.font.caption
             font.bold: true
@@ -569,7 +607,7 @@ Panel {
           Text {
             width: parent.width
             text: "Choose which held keys open a visual guide. Shortcuts continue to work normally."
-            color: Color.foreground
+            color: Commons.Color.foreground
             opacity: 0.78
             font.pixelSize: Style.font.caption
             wrapMode: Text.WordWrap
@@ -585,7 +623,7 @@ Panel {
                 Text {
                   anchors.verticalCenter: parent.verticalCenter
                   text: parent.modelData
-                  color: Color.foreground
+                  color: Commons.Color.foreground
                   opacity: 0.82
                   font.pixelSize: Style.font.caption
                   font.bold: true
@@ -603,7 +641,7 @@ Panel {
           Text {
             width: parent.width
             text: "INTEGRATION"
-            color: Color.foreground
+            color: Commons.Color.foreground
             opacity: 0.82
             font.pixelSize: Style.font.caption
             font.bold: true
@@ -611,7 +649,7 @@ Panel {
           Text {
             width: parent.width
             text: "The local Hyprland bridge is active. Disable it to remove the bridge and stop the visual guide."
-            color: Color.foreground
+            color: Commons.Color.foreground
             opacity: 0.78
             font.pixelSize: Style.font.caption
             wrapMode: Text.WordWrap

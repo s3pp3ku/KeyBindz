@@ -3,7 +3,7 @@ import QtTest 1.3
 import "../../GuideModel.js" as GuideModel
 
 TestCase {
-  name: "OmakeezGuideModel"
+  name: "KeyBindzGuideModel"
 
   function binding(number, modifiers, description, trackable, eligible) {
     return {
@@ -155,6 +155,8 @@ TestCase {
     compare(GuideModel.delayMode(true, 80), "delayed")
     compare(GuideModel.delayMode(true, 150), "delayed")
     compare(GuideModel.delayMode(true, 250), "delayed")
+    compare(GuideModel.delayMode(true, 500), "delayed")
+    compare(GuideModel.delayMode(false, 500), "hidden")
     compare(GuideModel.delayMode(true, -1), "disabled")
   }
 
