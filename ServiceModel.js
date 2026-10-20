@@ -145,7 +145,8 @@ function parseProtocol(payload, catalog) {
 function normalizeDelay(value) {
   if (value === false || String(value).toLowerCase() === "disabled") return -1
   var number = Number(value)
-  return [0, 80, 150, 250, 500].indexOf(number) !== -1 ? number : 0
+  if (number === -1) return -1
+  return [0, 80, 150, 250, 500, 1000].indexOf(number) !== -1 ? number : 0
 }
 
 function normalizeTopOffset(value) {

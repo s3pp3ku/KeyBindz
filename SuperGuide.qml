@@ -211,8 +211,10 @@ Item {
         Item {
           id: guideContent
           x: Style.space(4)
-          // Respect the configured top offset for notches and camera housings.
-          y: (root.keyboardMode ? Math.max(44, Style.space(4)) : Style.space(4)) + root.topOffset
+          // The bar is 26 logical px tall. "None" sits just beneath it;
+          // topOffset still pushes the guide down for notches and camera
+          // housings.
+          y: (root.keyboardMode ? 27 : Style.space(4)) + root.topOffset
           width: Math.max(1, parent.width - Style.space(8))
           height: headerChip.height + Style.space(12)
             + (root.keyboardMode ? keyboardCanvas.height : deckCanvas.height)

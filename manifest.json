@@ -20,7 +20,7 @@
     "allowMultiple": false,
     "defaultSection": "right",
     "defaults": {
-      "guideDelayMs": 500,
+      "guideDelayMs": 1000,
       "guideTopOffset": 0,
       "guideView": "keyboard",
       "showInFullscreen": false,

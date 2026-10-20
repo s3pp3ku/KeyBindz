@@ -143,7 +143,7 @@ Panel {
     Qt.openUrlExternally(root.bridgeSourceUrl)
   }
 
-  function delayValue(index) { return [0, 80, 150, 250, 500, -1][index] }
+  function delayValue(index) { return [0, 80, 150, 250, 500, 1000, -1][index] }
   function topOffsetValue(index) { return [0, 24, 32, 48, 64][index] }
 
   onBarChanged: syncService()
@@ -519,10 +519,10 @@ Panel {
             width: parent.width
             spacing: Style.space(4)
             Repeater {
-              model: ["Instant", "80 ms", "150 ms", "250 ms", "500 ms", "Off"]
+              model: ["Instant", "80 ms", "150 ms", "250 ms", "500 ms", "1 s", "Off"]
               Button {
                 required property int index
-                text: ["Instant", "80 ms", "150 ms", "250 ms", "500 ms", "Off"][index]
+                text: ["Instant", "80 ms", "150 ms", "250 ms", "500 ms", "1 s", "Off"][index]
                 selected: root.service && root.service.guideDelayMs === root.delayValue(index)
                 onClicked: root.service.setGuideDelayMs(root.delayValue(index))
               }

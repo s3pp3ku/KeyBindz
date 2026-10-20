@@ -325,7 +325,7 @@ function delayMode(guideVisible, delay) {
   if (guideVisible !== true) return "hidden"
   var value = Number(delay)
   if (value === 0) return "immediate"
-  if (value === 80 || value === 150 || value === 250 || value === 500) return "delayed"
+  if (value === 80 || value === 150 || value === 250 || value === 500 || value === 1000) return "delayed"
   return "disabled"
 }
 

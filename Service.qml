@@ -19,7 +19,7 @@ Item {
   property string activeModifiers: ""
   property string activeGuideRoot: ""
   property string highlightedBindingId: ""
-  property int guideDelayMs: 500
+  property int guideDelayMs: 1000
   property int guideTopOffset: 0
   property string guideView: "keyboard"
   property var keyboardHardware: ({})
@@ -218,7 +218,7 @@ Item {
 
   function syncSettings() {
     var entry = settingsEntry()
-    guideDelayMs = Model.normalizeDelay(entry.guideDelayMs === undefined ? 500 : entry.guideDelayMs)
+    guideDelayMs = Model.normalizeDelay(entry.guideDelayMs === undefined ? 1000 : entry.guideDelayMs)
     guideTopOffset = Model.normalizeTopOffset(entry.guideTopOffset)
     guideView = entry.guideView === "cards" ? "cards" : "keyboard"
     showInFullscreen = Model.normalizeFullscreen(entry.showInFullscreen)

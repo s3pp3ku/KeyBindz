@@ -156,6 +156,7 @@ TestCase {
     compare(GuideModel.delayMode(true, 150), "delayed")
     compare(GuideModel.delayMode(true, 250), "delayed")
     compare(GuideModel.delayMode(true, 500), "delayed")
+    compare(GuideModel.delayMode(true, 1000), "delayed")
     compare(GuideModel.delayMode(false, 500), "hidden")
     compare(GuideModel.delayMode(true, -1), "disabled")
   }
