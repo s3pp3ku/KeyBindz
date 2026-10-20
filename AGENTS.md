@@ -7,6 +7,8 @@ deployment, or live verification.
 
 - Repository: `/home/s3pp3ku/Projects/KeyBindz`
 - Public remote: <https://github.com/s3pp3ku/KeyBindz> (default branch `keybindz`)
+- Public docs, installation guide and screenshots were published on 2026-10-20.
+  Push updates to `origin/keybindz`.
 - Installed plugin (live copy): `~/.config/omarchy/plugins/io.github.s3pp3ku.keybindz/`
 - User settings: `~/.config/omarchy/shell.json`
 - Runtime state: `${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/keybindz/`
